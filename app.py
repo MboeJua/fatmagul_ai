@@ -10,7 +10,7 @@ df = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1")
+client = InferenceClient("google/flan-t5-base")
 
 def retrieve_context(query):
     query_embedding = embedder.encode([query], convert_to_tensor=True)
@@ -20,8 +20,8 @@ def retrieve_context(query):
 
 def generate_response(user_input):
     context = retrieve_context(user_input)
-    prompt = f"Context:\n{context}\n\nUser: {user_input}\nBot:"
-    result = client.text_generation(prompt, max_new_tokens=100)
+    prompt = f"Answer this: {user_input}. Use this context: {context}"
+    result = client.text_generation(prompt, max_new_tokens=200)
     return result
 
 iface = gr.Interface(fn=generate_response,
