@@ -1,17 +1,15 @@
 import pandas as pd
 from sentence_transformers import SentenceTransformer, util
-from huggingface_hub import InferenceClient
+from transformers import pipeline
 import gradio as gr
-import os
+
 
 df = pd.read_csv("knowledge_base.csv")
-
 
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1",
-                         token=os.getenv("token_f"))
+generator = pipeline("text-generation", model="bigscience/bloom-560m")
 
 def retrieve_context(query):
     query_embedding = embedder.encode([query], convert_to_tensor=True)
@@ -22,15 +20,14 @@ def retrieve_context(query):
 def generate_response(user_input):
     context = retrieve_context(user_input)
     prompt = f"Context:\n{context}\n\nUser: {user_input}\nAnswer:"
-    result = client.text_generation(prompt, max_new_tokens=200)
-    
+    result = generator(prompt, max_new_tokens=200)[0]["generated_text"]
     return result
 
 iface = gr.Interface(fn=generate_response,
                      inputs=gr.Textbox(label="Ask something"),
                      outputs=gr.Textbox(label="Bot Response"),
-                     title="RAG Chatbot",
-                     description="Chatbot with RAG over your CSV knowledge base")
+                     title="RAG Chatbot (Local Generation)",
+                     description="Chatbot with RAG using local BLOOM model and no API token")
 
 if __name__ == "__main__":
     iface.launch()
