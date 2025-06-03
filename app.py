@@ -1,64 +1,34 @@
-import gradio as gr
+import pandas as pd
+from sentence_transformers import SentenceTransformer, util
 from huggingface_hub import InferenceClient
-
-"""
-For more information on `huggingface_hub` Inference API support, please check the docs: https://huggingface.co/docs/huggingface_hub/v0.22.2/en/guides/inference
-"""
-client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
+import gradio as gr
 
 
-def respond(
-    message,
-    history: list[tuple[str, str]],
-    system_message,
-    max_tokens,
-    temperature,
-    top_p,
-):
-    messages = [{"role": "system", "content": system_message}]
-
-    for val in history:
-        if val[0]:
-            messages.append({"role": "user", "content": val[0]})
-        if val[1]:
-            messages.append({"role": "assistant", "content": val[1]})
-
-    messages.append({"role": "user", "content": message})
-
-    response = ""
-
-    for message in client.chat_completion(
-        messages,
-        max_tokens=max_tokens,
-        stream=True,
-        temperature=temperature,
-        top_p=top_p,
-    ):
-        token = message.choices[0].delta.content
-
-        response += token
-        yield response
+df = pd.read_csv("knowledge_base.csv")
 
 
-"""
-For information on how to customize the ChatInterface, peruse the gradio docs: https://www.gradio.app/docs/chatinterface
-"""
-demo = gr.ChatInterface(
-    respond,
-    additional_inputs=[
-        gr.Textbox(value="You are a friendly Chatbot.", label="System message"),
-        gr.Slider(minimum=1, maximum=2048, value=512, step=1, label="Max new tokens"),
-        gr.Slider(minimum=0.1, maximum=4.0, value=0.7, step=0.1, label="Temperature"),
-        gr.Slider(
-            minimum=0.1,
-            maximum=1.0,
-            value=0.95,
-            step=0.05,
-            label="Top-p (nucleus sampling)",
-        ),
-    ],
-)
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
+client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1")
+
+def retrieve_context(query):
+    query_embedding = embedder.encode([query], convert_to_tensor=True)
+    similarities = util.cos_sim(query_embedding, df["embedding"].tolist())[0]
+    best_idx = similarities.argmax().item()
+    return df.iloc[best_idx]["answer"]
+
+def generate_response(user_input):
+    context = retrieve_context(user_input)
+    prompt = f"Context:\n{context}\n\nUser: {user_input}\nBot:"
+    result = client.text_generation(prompt, max_new_tokens=100)
+    return result
+
+iface = gr.Interface(fn=generate_response,
+                     inputs=gr.Textbox(label="Ask something"),
+                     outputs=gr.Textbox(label="Bot Response"),
+                     title="RAG Chatbot",
+                     description="Chatbot with RAG over your CSV knowledge base")
 
 if __name__ == "__main__":
-    demo.launch()
+    iface.launch()
