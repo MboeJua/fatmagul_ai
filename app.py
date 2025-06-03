@@ -25,8 +25,9 @@ def retrieve_context(query):
 
 def generate_response(user_input):
     context = retrieve_context(user_input)
-    prompt = f"Answer this: {user_input}. Use this context: {context}"
+    prompt = f"User: {user_input}\nContext: {context}\nAssistant:"
     result = client.text_generation(prompt, max_new_tokens=200)
+    
     return result
 
 iface = gr.Interface(fn=generate_response,
