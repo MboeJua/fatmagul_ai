@@ -9,7 +9,7 @@ df = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-generator = pipeline("text-generation", model="google/t5-v1_1-small")
+generator = pipeline("text-generation", model="sshleifer/tiny-gpt2")
 
 def retrieve_context(query):
     query_embedding = embedder.encode([query], convert_to_tensor=True)
