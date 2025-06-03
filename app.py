@@ -2,7 +2,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer, util
 from huggingface_hub import InferenceClient
 import gradio as gr
-
+import os
 
 df = pd.read_csv("knowledge_base.csv")
 
@@ -10,7 +10,12 @@ df = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-client = InferenceClient("google/flan-t5-base")
+
+client = InferenceClient(
+    model="google/flan-t5-base",
+    token=os.getenv("token_f")
+)
+
 
 def retrieve_context(query):
     query_embedding = embedder.encode([query], convert_to_tensor=True)
