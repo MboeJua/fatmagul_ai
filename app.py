@@ -12,7 +12,7 @@ df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=Tru
 
 
 client = InferenceClient(
-    model="google/flan-t5-base",
+    model="tiiuae/falcon-rw-1b",
     token=os.getenv("token_f")
 )
 
