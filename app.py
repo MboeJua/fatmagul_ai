@@ -20,7 +20,7 @@ def retrieve_context(query):
 def generate_response(user_input):
     context = retrieve_context(user_input)
     prompt = f"Answer the question using the context.\nContext: {context}\nQuestion: {user_input}"
-    result = generator(prompt, max_new_tokens=100)[0]["generated_text"]
+    result = generator(prompt, max_new_tokens=200)[0]["generated_text"]
     return result
 
 iface = gr.Interface(fn=generate_response,
