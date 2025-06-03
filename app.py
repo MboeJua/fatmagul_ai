@@ -10,7 +10,7 @@ df = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-client = InferenceClient("bigscience/bloom-560m",
+client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1",
                          token=os.getenv("token_f"))
 
 def retrieve_context(query):
