@@ -10,12 +10,7 @@ df = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
 
-
-client = InferenceClient(
-    model="tiiuae/falcon-rw-1b",
-    token=os.getenv("token_f")
-)
-
+client = InferenceClient("bigscience/bloom-560m")
 
 def retrieve_context(query):
     query_embedding = embedder.encode([query], convert_to_tensor=True)
@@ -25,7 +20,7 @@ def retrieve_context(query):
 
 def generate_response(user_input):
     context = retrieve_context(user_input)
-    prompt = f"User: {user_input}\nContext: {context}\nAssistant:"
+    prompt = f"Context:\n{context}\n\nUser: {user_input}\nAnswer:"
     result = client.text_generation(prompt, max_new_tokens=200)
     
     return result
