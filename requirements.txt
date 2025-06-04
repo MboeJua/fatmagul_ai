@@ -1,0 +1,7 @@
+flask
+twilio
+transformers
+sentence-transformers
+pandas
+torch
+scipy
