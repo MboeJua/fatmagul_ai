@@ -1,33 +1,36 @@
+from flask import Flask, request
 from transformers import pipeline
-import pandas as pd
 from sentence_transformers import SentenceTransformer, util
-import gradio as gr
+import pandas as pd
+from twilio.twiml.messaging_response import MessagingResponse
 
-# Load knowledge base
-df = pd.read_csv("knowledge_base.csv")
+kb = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
-df["embedding"] = embedder.encode(df["question"].tolist(), convert_to_tensor=True).tolist()
+kb["embedding"] = embedder.encode(kb["question"].tolist(), convert_to_tensor=True).tolist()
 
-# Load T5-based model
 generator = pipeline("text2text-generation", model="google/flan-t5-small")
 
-def retrieve_context(query):
-    query_embedding = embedder.encode([query], convert_to_tensor=True)
-    similarities = util.cos_sim(query_embedding, df["embedding"].tolist())[0]
+def rag_answer(user_input):
+    query_embedding = embedder.encode([user_input], convert_to_tensor=True)
+    similarities = util.cos_sim(query_embedding, kb["embedding"].tolist())[0]
     best_idx = similarities.argmax().item()
-    return df.iloc[best_idx]["answer"]
-
-def generate_response(user_input):
-    context = retrieve_context(user_input)
+    context = kb.iloc[best_idx]["answer"]
     prompt = f"Answer the question using the context.\nContext: {context}\nQuestion: {user_input}"
-    result = generator(prompt, max_new_tokens=200)[0]["generated_text"]
-    return result
+    return generator(prompt, max_new_tokens=100)[0]["generated_text"]
 
-iface = gr.Interface(fn=generate_response,
-                     inputs=gr.Textbox(label="Ask something"),
-                     outputs=gr.Textbox(label="Bot Response"),
-                     title="RAG Chatbot (Flan-T5 Small)",
-                     description="Fast RAG chatbot using Google Flan-T5-Small (local, no token needed)")
+app = Flask(__name__)
+
+@app.route("/whatsapp", methods=["POST"])
+def whatsapp():
+    incoming_msg = request.values.get("Body", "").strip()
+    reply = rag_answer(incoming_msg)
+    resp = MessagingResponse()
+    resp.message(reply)
+    return str(resp)
+
+@app.route("/")
+def home():
+    return "RAG WhatsApp Bot is running."
 
 if __name__ == "__main__":
-    iface.launch()
+    app.run(host="0.0.0.0", port=7860)
