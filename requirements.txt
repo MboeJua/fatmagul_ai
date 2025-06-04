@@ -1,7 +1,9 @@
-huggingface_hub==0.25.2
 pandas
 sentence-transformers
 gradio
 torch
 flask
 twilio
+transformers
+sentence-transformers
+scipy
