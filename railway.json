@@ -2,6 +2,9 @@
   "build": {
     "nixpacksPlan": {
       "phases": {
+        "setup": {
+          "nixPkgs": ["python310", "pip"]
+        },
         "start": {
           "cmds": ["python app.py"]
         }
