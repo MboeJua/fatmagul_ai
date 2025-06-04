@@ -1,7 +1,0 @@
-flask
-pandas
-transformers
-torch
-sentence-transformers
-twilio
-
