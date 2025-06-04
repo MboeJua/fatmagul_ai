@@ -5,5 +5,4 @@ torch
 flask
 twilio
 transformers
-sentence-transformers
 scipy
