@@ -4,3 +4,4 @@ sentence-transformers
 gradio
 torch
 flask
+twilio
