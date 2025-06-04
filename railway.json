@@ -1,0 +1,11 @@
+{
+  "build": {
+    "nixpacksPlan": {
+      "phases": {
+        "start": {
+          "cmds": ["python app.py"]
+        }
+      }
+    }
+  }
+}
