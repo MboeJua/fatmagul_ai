@@ -10,16 +10,22 @@ kb = pd.read_csv("knowledge_base.csv")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 kb["embedding"] = embedder.encode(kb["question"].tolist(), convert_to_tensor=True).tolist()
 
-generator = pipeline("text2text-generation", model="google/flan-t5-small")
+generator = pipeline("text-generation", model="tiiuae/falcon-rw-1b")
 
 # RAG answer function
 def rag_answer(user_input):
     query_embedding = embedder.encode([user_input], convert_to_tensor=True)
     similarities = util.cos_sim(query_embedding, kb["embedding"].tolist())[0]
+    best_score = similarities.max().item()
     best_idx = similarities.argmax().item()
+
+    if best_score < 0.4:
+        return "I'm not sure about that. Can you ask something else?"
+    
     context = kb.iloc[best_idx]["answer"]
-    prompt = f"Answer the question using the context.\nContext: {context}\nQuestion: {user_input}"
-    return generator(prompt, max_new_tokens=100)[0]["generated_text"]
+    prompt = f"User: {user_input}\nContext: {context}\nAI:"
+    return generator(prompt, max_new_tokens=350, do_sample=True, temperature=0.7)[0]["generated_text"]
+
 
 # Flask app
 app = Flask(__name__)
