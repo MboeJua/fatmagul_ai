@@ -1,0 +1,7 @@
+{
+  "name": "python-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "python app.py"
+  }
+}
